@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Admin Dashboard — Hartwell & Co. Realty</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;color:#1f2937}
+#loginPage{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#111827}
+.login-box{width:100%;max-width:420px;background:#fff;padding:40px;border-radius:16px;box-shadow:0 25px 70px rgba(0,0,0,.3)}
+.login-box h1{font:30px Georgia,serif;margin-bottom:8px;color:#111827}
+.login-box p{color:#6b7280;margin-bottom:28px}
+.field{margin-bottom:18px}.field label{display:block;font-size:14px;font-weight:700;margin-bottom:7px}
+.field input{width:100%;height:48px;padding:0 14px;border:1px solid #d1d5db;border-radius:8px;font-size:15px;outline:0}
+.field input:focus{border-color:#111827;box-shadow:0 0 0 3px rgba(17,24,39,.08)}
+.login-btn{width:100%;height:48px;border:0;border-radius:8px;background:#111827;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+.login-btn:hover{background:#000}.login-btn:disabled{opacity:.6}
+#loginError{display:none;margin-top:15px;padding:12px;border-radius:8px;background:#fee2e2;color:#b91c1c;font-size:14px}
+#dashboard{display:none;min-height:100vh}
+.topbar{height:72px;background:#111827;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 40px}
+.brand{font:600 23px Georgia,serif}.topbar-right{display:flex;align-items:center}
+.admin-label{font-size:13px;color:#d1d5db;margin-right:18px}
+.logout-btn{background:transparent;border:1px solid rgba(255,255,255,.45);color:#fff;padding:10px 18px;border-radius:7px;cursor:pointer;font-weight:600}
+.logout-btn:hover{background:#fff;color:#111827}
+.main{width:100%;max-width:1800px;margin:auto;padding:38px 40px 60px}
+.page-title{margin-bottom:28px}.page-title h1{font:34px Georgia,serif;color:#111827;margin-bottom:7px}.page-title p{color:#6b7280;font-size:15px}
+#dashboardStatus{display:none;margin-bottom:20px;padding:13px 16px;border-radius:8px;font-size:14px}
+#dashboardStatus.success{display:block;background:#dcfce7;color:#166534}
+#dashboardStatus.error{display:block;background:#fee2e2;color:#b91c1c}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:28px}
+.stat-card{background:#fff;padding:24px;border-radius:12px;border:1px solid #e5e7eb;box-shadow:0 3px 18px rgba(0,0,0,.06)}
+.stat-card span{display:block;color:#6b7280;font-size:14px;margin-bottom:10px}.stat-card strong{font-size:32px;color:#111827}
+.section{width:100%;background:#fff;border-radius:14px;border:1px solid #e5e7eb;box-shadow:0 4px 20px rgba(0,0,0,.05);overflow:hidden}
+.section-header{min-height:75px;padding:18px 25px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.header-info{display:flex;flex-direction:column;gap:4px}.section-header h2{font:23px Georgia,serif;color:#111827}.section-header p{color:#6b7280;font-size:13px}
+.refresh-btn{border:1px solid #d1d5db;background:#fff;padding:10px 17px;border-radius:7px;cursor:pointer;font-weight:600;color:#374151}
+.refresh-btn:hover{background:#f9fafb}
+.table-wrapper{width:100%;overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:17px 18px;text-align:left;border-bottom:1px solid #e5e7eb;vertical-align:top}
+th{background:#f9fafb;color:#4b5563;font-size:12px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+td{font-size:14px;color:#374151}tbody tr:hover{background:#fafafa}tbody tr:last-child td{border-bottom:0}
+.customer-cell{min-width:160px}.email-cell{min-width:230px}.phone-cell{min-width:150px}.property-cell{min-width:200px}
+.message-cell{min-width:380px;max-width:600px}.date-cell{min-width:175px;white-space:nowrap}.action-cell{min-width:90px;white-space:nowrap}
+.customer-name{font-weight:700;color:#111827;margin-bottom:4px}.customer-id{font-size:12px;color:#9ca3af}
+.email{color:#374151;word-break:break-word}.phone{color:#374151;white-space:nowrap}
+.property-interest{display:inline-block;padding:6px 10px;background:#f3f4f6;color:#374151;border-radius:6px;font-size:13px}
+.message{line-height:1.55;color:#4b5563;word-break:break-word}.date{color:#6b7280;font-size:13px;line-height:1.5}
+.delete-btn{border:0;background:#fee2e2;color:#b91c1c;padding:9px 13px;border-radius:6px;cursor:pointer;font-weight:700;font-size:13px}
+.delete-btn:hover{background:#fecaca}
+.empty,.loading{padding:60px 20px!important;text-align:center!important;color:#6b7280!important;font-size:14px}
+.footer{text-align:center;padding:25px;color:#9ca3af;font-size:13px}
+@media(max-width:1200px){.main{padding-left:25px;padding-right:25px}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:800px){.topbar{padding:0 18px}.brand{font-size:18px}.admin-label{display:none}.main{padding:25px 15px 40px}.page-title h1{font-size:28px}.section-header{align-items:flex-start;flex-direction:column}.refresh-btn{width:100%}}
+@media(max-width:600px){.login-box{padding:30px 22px}.stats{grid-template-columns:1fr}.topbar{height:65px}.brand{font-size:16px}}
+</style>
+</head>
+
+<body>
+
+<div id="loginPage">
+<div class="login-box">
+<h1>Hartwell & Co.</h1>
+<p>Realty Admin Dashboard</p>
+<form id="loginForm">
+<div class="field"><label for="username">Username</label><input type="text" id="username" placeholder="Enter username" autocomplete="username" required></div>
+<div class="field"><label for="password">Password</label><input type="password" id="password" placeholder="Enter password" autocomplete="current-password" required></div>
+<button type="submit" class="login-btn" id="loginButton">Login</button>
+<div id="loginError"></div>
+</form>
+</div>
+</div>
+
+<div id="dashboard">
+
+<header class="topbar">
+<div class="brand">Hartwell & Co. Realty</div>
+<div class="topbar-right"><span class="admin-label">Administrator</span><button class="logout-btn" id="logoutButton">Logout</button></div>
+</header>
+
+<main class="main">
+
+<div class="page-title">
+<h1>Dashboard</h1>
+<p>Manage customer enquiries submitted through your website.</p>
+</div>
+
+<div id="dashboardStatus"></div>
+
+<div class="stats">
+
+<div class="stat-card">
+<span>Customer Enquiries</span>
+<strong id="enquiryCount">0</strong>
+</div>
+
+<div class="stat-card">
+<span>Dashboard Status</span>
+<strong>Active</strong>
+</div>
+
+<div class="stat-card">
+<span>Database</span>
+<strong>Online</strong>
+</div>
+
+<div class="stat-card">
+<span>System</span>
+<strong>Local</strong>
+</div>
+
+</div>
+
+<section class="section">
+
+<div class="section-header">
+
+<div class="header-info">
+<h2>Customer Enquiries</h2>
+<p>All enquiries received from the website contact form.</p>
+</div>
+
+<button class="refresh-btn" id="refreshButton">Refresh Enquiries</button>
+
+</div>
+
+<div class="table-wrapper">
+
+<table>
+
+<thead>
+<tr>
+<th>Customer</th>
+<th>Email</th>
+<th>Phone</th>
+<th>Property Interest</th>
+<th>Message</th>
+<th>Date</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="enquiriesBody">
+<tr><td colspan="7" class="loading">Loading enquiries...</td></tr>
+</tbody>
+
+</table>
+
+</div>
+</section>
+
+<div class="footer">Hartwell & Co. Realty — Local Admin System</div>
+
+</main>
+</div>
+
+<script>
+
+const loginPage=document.getElementById("loginPage"),
+dashboard=document.getElementById("dashboard"),
+loginForm=document.getElementById("loginForm"),
+usernameInput=document.getElementById("username"),
+passwordInput=document.getElementById("password"),
+loginButton=document.getElementById("loginButton"),
+loginError=document.getElementById("loginError"),
+logoutButton=document.getElementById("logoutButton"),
+refreshButton=document.getElementById("refreshButton"),
+enquiryCount=document.getElementById("enquiryCount"),
+enquiriesBody=document.getElementById("enquiriesBody"),
+dashboardStatus=document.getElementById("dashboardStatus");
+
+let token=localStorage.getItem("hartwell_admin_token");
+
+function showLogin(){
+loginPage.style.display="flex";
+dashboard.style.display="none";
+}
+
+function showDashboard(){
+loginPage.style.display="none";
+dashboard.style.display="block";
+loadEnquiries();
+}
+
+loginForm.addEventListener("submit",async e=>{
+e.preventDefault();
+loginError.style.display="none";
+loginButton.disabled=true;
+loginButton.textContent="Logging in...";
+
+const username=usernameInput.value.trim();
+const password=passwordInput.value;
+
+try{
+
+const response=await fetch("/api/admin/login",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({username,password})
+});
+
+const result=await response.json();
+
+if(!response.ok||!result.success)throw new Error(result.message||"Invalid username or password.");
+
+token=result.token;
+localStorage.setItem("hartwell_admin_token",token);
+passwordInput.value="";
+showDashboard();
+
+}catch(error){
+
+console.error(error);
+loginError.textContent=error.message||"Login failed.";
+loginError.style.display="block";
+
+}finally{
+
+loginButton.disabled=false;
+loginButton.textContent="Login";
+
+}
+});
+
+async function loadEnquiries(){
+
+enquiriesBody.innerHTML='<tr><td colspan="7" class="loading">Loading enquiries...</td></tr>';
+
+try{
+
+const response=await fetch("/api/enquiries",{
+headers:{"Authorization":"Bearer "+token}
+});
+
+if(response.status===401){
+logout();
+return;
+}
+
+const result=await response.json();
+
+if(!response.ok||!result.success)throw new Error(result.message||"Failed to load enquiries.");
+
+const enquiries=result.enquiries||[];
+enquiryCount.textContent=enquiries.length;
+
+if(!enquiries.length){
+enquiriesBody.innerHTML='<tr><td colspan="7" class="empty">No customer enquiries yet.</td></tr>';
+return;
+}
+
+enquiriesBody.innerHTML=enquiries.map(e=>`
+<tr>
+<td class="customer-cell">
+<div class="customer-name">${escapeHTML(e.name)}</div>
+<div class="customer-id">Enquiry #${e.id}</div>
+</td>
+<td class="email-cell"><div class="email">${escapeHTML(e.email)}</div></td>
+<td class="phone-cell"><div class="phone">${escapeHTML(e.phone||"-")}</div></td>
+<td class="property-cell"><span class="property-interest">${escapeHTML(e.property_interest||"General enquiry")}</span></td>
+<td class="message-cell"><div class="message">${escapeHTML(e.message||"-")}</div></td>
+<td class="date-cell"><div class="date">${formatDate(e.created_at)}</div></td>
+<td class="action-cell"><button class="delete-btn" onclick="deleteEnquiry(${e.id})">Delete</button></td>
+</tr>
+`).join("");
+
+}catch(error){
+
+console.error(error);
+enquiriesBody.innerHTML='<tr><td colspan="7" class="empty">Failed to load enquiries.</td></tr>';
+showStatus(error.message||"Failed to load enquiries.","error");
+
+}
+}
+
+async function deleteEnquiry(id){
+
+if(!confirm("Are you sure you want to delete this enquiry?"))return;
+
+try{
+
+const response=await fetch("/api/enquiries/"+id,{
+method:"DELETE",
+headers:{"Authorization":"Bearer "+token}
+});
+
+if(response.status===401){
+logout();
+return;
+}
+
+const result=await response.json();
+
+if(!response.ok||!result.success)throw new Error(result.message||"Failed to delete enquiry.");
+
+showStatus("Enquiry deleted successfully.","success");
+loadEnquiries();
+
+}catch(error){
+
+console.error(error);
+showStatus(error.message||"Failed to delete enquiry.","error");
+
+}
+}
+
+refreshButton.addEventListener("click",loadEnquiries);
+logoutButton.addEventListener("click",logout);
+
+async function logout(){
+
+try{
+
+if(token)await fetch("/api/admin/logout",{
+method:"POST",
+headers:{"Authorization":"Bearer "+token}
+});
+
+}catch(error){
+console.error(error);
+}
+
+token=null;
+localStorage.removeItem("hartwell_admin_token");
+showLogin();
+}
+
+function showStatus(message,type){
+
+dashboardStatus.textContent=message;
+dashboardStatus.className=type;
+
+setTimeout(()=>{
+dashboardStatus.className="";
+dashboardStatus.style.display="none";
+},4000);
+
+}
+
+function escapeHTML(value){
+
+return String(value)
+.replace(/&/g,"&amp;")
+.replace(/</g,"&lt;")
+.replace(/>/g,"&gt;")
+.replace(/"/g,"&quot;")
+.replace(/'/g,"&#039;");
+
+}
+
+function formatDate(value){
+
+if(!value)return"-";
+
+const date=new Date(
+typeof value==="string"&&value.includes(" ")
+?value.replace(" ","T")+"Z"
+:value
+);
+
+if(isNaN(date.getTime()))return value;
+
+return date.toLocaleString("en-IN",{
+day:"2-digit",
+month:"short",
+year:"numeric",
+hour:"2-digit",
+minute:"2-digit"
+});
+
+}
+
+async function checkExistingLogin(){
+
+if(!token){
+showLogin();
+return;
+}
+
+try{
+
+const response=await fetch("/api/admin/check",{
+headers:{"Authorization":"Bearer "+token}
+});
+
+if(!response.ok)throw new Error("Session expired.");
+
+showDashboard();
+
+}catch(error){
+
+localStorage.removeItem("hartwell_admin_token");
+token=null;
+showLogin();
+
+}
+}
+
+checkExistingLogin();
+
+</script>
+</body>
+</html>
